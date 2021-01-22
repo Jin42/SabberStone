@@ -1,4 +1,17 @@
-﻿using Newtonsoft.Json.Linq;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using Newtonsoft.Json.Linq;
 using SabberStoneCore.Enums;
 using SabberStoneCore.Kettle;
 using System;
@@ -55,7 +68,7 @@ namespace SabberStoneKettle
 		public int MaxSecretZoneSizePerPlayer;
 		public int MaxQuestsPerPlayer;
 
-		public const String KettleName = "GameJoined";
+		public const string KettleName = "GameJoined";
 	}
 
 	public class KettleCreateGame : KettlePayload
@@ -67,7 +80,7 @@ namespace SabberStoneKettle
 
 		public List<KettleCreatePlayer> Players;
 
-		public const String KettleName = "CreateGame";
+		public const string KettleName = "CreateGame";
 	}
 
 	public class KettleCreatePlayer : KettlePayload
@@ -77,11 +90,11 @@ namespace SabberStoneKettle
 			return KettleUtils.CreateKettlePayload(KettleName, this);
 		}
 
-		public String Name;
-		public String Hero;
-		public List<String> Cards;
+		public string Name;
+		public string Hero;
+		public List<string> Cards;
 
-		public const String KettleName = "CreatePlayer";
+		public const string KettleName = "CreatePlayer";
 	}
 
 	public class KettleEntity
@@ -99,7 +112,7 @@ namespace SabberStoneKettle
 		}
 
 		public int EntityId;
-		public Dictionary<int, int> Tags;
+		public IDictionary<int, int> Tags;
 	}
 
 	public class KettlePlayer
@@ -132,7 +145,7 @@ namespace SabberStoneKettle
 		public int Data;
 		public List<int> Info;
 
-		public const String KettleName = "HistoryMetaData";
+		public const string KettleName = "HistoryMetaData";
 	}
 
 	public class KettleHistoryTagChange : KettleHistoryEntry
@@ -154,7 +167,7 @@ namespace SabberStoneKettle
 		public int Tag;
 		public int Value;
 
-		public const String KettleName = "HistoryTagChange";
+		public const string KettleName = "HistoryTagChange";
 	}
 
 	public class KettleHistoryFullEntity : KettleHistoryEntry
@@ -174,7 +187,7 @@ namespace SabberStoneKettle
 		public KettleEntity Entity;
 		public string Name;
 
-		public const String KettleName = "HistoryFullEntity";
+		public const string KettleName = "HistoryFullEntity";
 	}
 
 	public class KettleHistoryShowEntity : KettleHistoryEntry
@@ -194,7 +207,7 @@ namespace SabberStoneKettle
 		public KettleEntity Entity;
 		public string Name;
 
-		public const String KettleName = "HistoryShowEntity";
+		public const string KettleName = "HistoryShowEntity";
 	}
 
 	public class KettleHistoryHideEntity : KettleHistoryEntry
@@ -214,7 +227,7 @@ namespace SabberStoneKettle
 		public int EntityId;
 		public int Zone;
 
-		public const String KettleName = "HistoryHideEntity";
+		public const string KettleName = "HistoryHideEntity";
 	}
 
 	public class KettleHistoryChangeEntity : KettleHistoryEntry
@@ -234,7 +247,7 @@ namespace SabberStoneKettle
 		public KettleEntity Entity;
 		public string Name;
 
-		public const String KettleName = "HistoryChangeEntity";
+		public const string KettleName = "HistoryChangeEntity";
 	}
 
 	public class KettleMetaData : KettlePayload
@@ -248,7 +261,7 @@ namespace SabberStoneKettle
 		public int Data;
 		public int Info;
 
-		public const String KettleName = "MetaData";
+		public const string KettleName = "MetaData";
 	}
 
 	public class KettleChoices : KettlePayload
@@ -265,7 +278,7 @@ namespace SabberStoneKettle
 		public int Max;
 		public List<int> Choices;
 
-		public const String KettleName = "Choices";
+		public const string KettleName = "Choices";
 	}
 
 	public class KettleOptionsBlock : KettlePayload
@@ -290,7 +303,7 @@ namespace SabberStoneKettle
 		public int Id;
 		public List<KettleOption> Options;
 
-		public const String KettleName = "OptionsBlock";
+		public const string KettleName = "OptionsBlock";
 	}
 
 	public class KettleOption
@@ -340,7 +353,7 @@ namespace SabberStoneKettle
 		public int SubOption;
 		public int Position;
 
-		public const String KettleName = "SendOption";
+		public const string KettleName = "SendOption";
 	}
 
 	public class KettleEntityChoices : KettlePayload
@@ -370,7 +383,7 @@ namespace SabberStoneKettle
 		public int Source;
 		public int PlayerId;
 
-		public const String KettleName = "EntityChoices";
+		public const string KettleName = "EntityChoices";
 	}
 
 	public class KettleHistoryCreateGame : KettleHistoryEntry
@@ -393,7 +406,7 @@ namespace SabberStoneKettle
 		public KettleEntity Game;
 		public List<KettlePlayer> Players;
 
-		public const String KettleName = "HistoryCreateGame";
+		public const string KettleName = "HistoryCreateGame";
 	}
 
 	public class KettleHistoryBlockBegin : KettleHistoryEntry
@@ -419,7 +432,7 @@ namespace SabberStoneKettle
 		public int Type;
 		public string EffectCardId;
 
-		public const String KettleName = "HistoryBlockBegin";
+		public const string KettleName = "HistoryBlockBegin";
 	}
 
 	public class KettleHistoryBlockEnd : KettleHistoryEntry
@@ -432,7 +445,7 @@ namespace SabberStoneKettle
 		public KettleHistoryBlockEnd() { }
 		public KettleHistoryBlockEnd(PowerHistoryBlockEnd end) { }
 
-		public const String KettleName = "HistoryBlockEnd";
+		public const string KettleName = "HistoryBlockEnd";
 	}
 
 	public class KettleChooseEntities : KettlePayload
@@ -445,7 +458,7 @@ namespace SabberStoneKettle
 			return KettleUtils.CreateKettlePayload(KettleName, this);
 		}
 
-		public const String KettleName = "ChooseEntities";
+		public const string KettleName = "ChooseEntities";
 	}
 
 	public class KettleEntitiesChosen : KettlePayload
@@ -459,7 +472,7 @@ namespace SabberStoneKettle
 			return KettleUtils.CreateKettlePayload(KettleName, this);
 		}
 
-		public const String KettleName = "EntitiesChosen";
+		public const string KettleName = "EntitiesChosen";
 	}
 
 	public class KettleMouseInfo
@@ -482,7 +495,7 @@ namespace SabberStoneKettle
 			return KettleUtils.CreateKettlePayload(KettleName, this);
 		}
 
-		public const String KettleName = "UserUI";
+		public const string KettleName = "UserUI";
 	}
 
 	public class KettleJoinGame : KettlePayload
@@ -496,7 +509,7 @@ namespace SabberStoneKettle
 			return KettleUtils.CreateKettlePayload(KettleName, this);
 		}
 
-		public const String KettleName = "JoinGame";
+		public const string KettleName = "JoinGame";
 	}
 
 	public class KettleStartClient : KettlePayload
@@ -512,12 +525,12 @@ namespace SabberStoneKettle
 			return KettleUtils.CreateKettlePayload(KettleName, this);
 		}
 
-		public const String KettleName = "StartClient";
+		public const string KettleName = "StartClient";
 	}
 
 	public class KettleUtils
 	{
-		public static JObject CreateKettlePayload(String name, object payload)
+		public static JObject CreateKettlePayload(string name, object payload)
 		{
 			JObject packet = new JObject();
 			packet.Add("Type", name);
@@ -526,7 +539,7 @@ namespace SabberStoneKettle
 			return packet;
 		}
 
-		public static Dictionary<int, int> TagsToKettleTags(Dictionary<GameTag, int> tags)
+		public static IDictionary<int, int> TagsToKettleTags(IDictionary<GameTag, int> tags)
 		{
 			return tags.OrderBy(p => p.Key).ToDictionary(p => (int)p.Key, p => p.Value);
 		}

@@ -1,4 +1,17 @@
-﻿using System;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using System;
 using SabberStoneCore.Model;
 using SabberStoneCore.Enums;
 using SabberStoneCore.Kettle;
@@ -42,35 +55,35 @@ namespace SabberStoneCore.Actions
 				{
 					// DrawTrigger vs TOPDECK ?? not sure which one is first
 
+					Game game = c.Game;
+
 					if (cardToDraw == null)
 					{
-						c.Game.TaskQueue.StartEvent();
-						c.Game.TriggerManager.OnDrawTrigger(playable);
-						c.Game.ProcessTasks();
-						c.Game.TaskQueue.EndEvent();
+						game.TaskQueue.StartEvent();
+						game.TriggerManager.OnDrawTrigger(playable);
+						game.ProcessTasks();
+						game.TaskQueue.EndEvent();
 					}
 
-					ISimpleTask clone = playable.Power?.TopdeckTask?.Clone();
-					if (clone != null)
+					ISimpleTask task = playable.Power?.TopdeckTask;
+					if (task != null)
 					{
-						clone.Game = c.Game;
-						clone.Controller = c;
-						clone.Source = playable;
-
-						if (c.Game.History)
+						if (game.History)
 						{
 							// TODO: triggerkeyword: TOPDECK
-							c.Game.PowerHistory.Add(
+							game.PowerHistory.Add(
 								PowerHistoryBuilder.BlockStart(BlockType.TRIGGER, playable.Id, "", 0, 0));
 						}
 
 						c.SetasideZone.Add(c.HandZone.Remove(playable));
 
-						c.Game.Log(LogLevel.INFO, BlockType.TRIGGER, "TOPDECK",
-							!c.Game.Logging ? "" : $"{playable}'s TOPDECK effect is activated.");
-						clone.Process();
-						if (c.Game.History)
-							c.Game.PowerHistory.Add(
+						game.Log(LogLevel.INFO, BlockType.TRIGGER, "TOPDECK",
+							!game.Logging ? "" : $"{playable}'s TOPDECK effect is activated.");
+
+						task.Process(game, c, playable, null);
+
+						if (game.History)
+							game.PowerHistory.Add(
 								PowerHistoryBuilder.BlockEnd());
 					}
 				}
@@ -93,7 +106,7 @@ namespace SabberStoneCore.Actions
 		private static Func<Controller, IPlayable, IPlayable> DrawPhase
 			=> delegate (Controller c, IPlayable cardToDraw)
 			{
-				IPlayable playable = c.DeckZone.Remove(cardToDraw ?? c.DeckZone.TopCard);
+				IPlayable playable = c.DeckZone.Draw(cardToDraw);
 
 				c.Game.Log(LogLevel.INFO, BlockType.ACTION, "DrawPhase", !c.Game.Logging ? "" : $"{c.Name} draws {playable}");
 
@@ -102,6 +115,51 @@ namespace SabberStoneCore.Actions
 
 				return playable;
 			};
+
+		public static IPlayable Draw(Controller c, int index)
+		{
+			IPlayable playable = c.DeckZone.Remove(index);
+			c.Game.Log(LogLevel.INFO, BlockType.ACTION, "DrawPhase", !c.Game.Logging ? "" : $"{c.Name} draws {playable}");
+
+			c.NumCardsDrawnThisTurn++;
+			c.LastCardDrawn = playable.Id;
+
+			if (AddHandPhase.Invoke(c, playable))
+			{
+				// DrawTrigger vs TOPDECK ?? not sure which one is first
+
+				Game game = c.Game;
+
+				game.TaskQueue.StartEvent();
+				game.TriggerManager.OnDrawTrigger(playable);
+				game.ProcessTasks();
+				game.TaskQueue.EndEvent();
+				
+				ISimpleTask task = playable.Power?.TopdeckTask;
+				if (task != null)
+				{
+					if (game.History)
+					{
+						// TODO: triggerkeyword: TOPDECK
+						game.PowerHistory.Add(
+							PowerHistoryBuilder.BlockStart(BlockType.TRIGGER, playable.Id, "", 0, 0));
+					}
+
+					c.SetasideZone.Add(c.HandZone.Remove(playable));
+
+					game.Log(LogLevel.INFO, BlockType.TRIGGER, "TOPDECK",
+						!game.Logging ? "" : $"{playable}'s TOPDECK effect is activated.");
+
+					task.Process(game, c, playable, null);
+
+					if (game.History)
+						game.PowerHistory.Add(
+							PowerHistoryBuilder.BlockEnd());
+				}
+			}
+
+			return playable;
+		}
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

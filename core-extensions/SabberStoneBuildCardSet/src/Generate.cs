@@ -1,4 +1,17 @@
-﻿using SabberStoneCore.Enums;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using SabberStoneCore.Enums;
 using SabberStoneCore.Model;
 using System;
 using System.Collections.Generic;
@@ -14,26 +27,36 @@ namespace SabberStoneBuildCardSet
 		private static readonly string Path = Directory.GetCurrentDirectory(); // @"C:\Users\admin\Source\Repos\";
 		private static readonly Regex Rgx = new Regex("[^a-zA-Z0-9 -]");
 
-		private static bool Adventure = false;
+		private static bool Adventure;
 
-		private static string MapCardSetAdventureString(CardSet cardSet)
+		private static string[] MapCardSetAdventureString(CardSet cardSet)
 		{
 			switch(cardSet)
 			{
 				case CardSet.BRM:
-					return "BRMA";
+					return new[] { "BRMA" };
 				case CardSet.NAXX:
-					return "NAX";
+					return new[] { "NAX" };
 				case CardSet.LOE:
-					return "LOEA";
+					return new[] { "LOEA" };
 				case CardSet.KARA:
-					return "KARA";
+					return new[] { "KARA", "KAR_A", "KAR_a" };
 				case CardSet.ICECROWN:
-					return "ICCA";
+					return new[] { "ICCA" };
 				case CardSet.LOOTAPALOOZA:
-					return "LOOTA";
+					return new[] { "LOOTA" };
+				case CardSet.GILNEAS:
+					return new[] { "GILA" };
+				case CardSet.BOOMSDAY:
+					return new[] { "BOTA" };
+				case CardSet.TROLL:
+					return new[] { "TRLA" };
+				case CardSet.DALARAN:
+					return new[] { "DALA" };
+				case CardSet.ULDUM:
+					return new[] { "ULDA" };
 				default:
-					return String.Empty;
+					return new[] { String.Empty};
 			}
 		}
 
@@ -57,17 +80,18 @@ namespace SabberStoneBuildCardSet
 			//   // {CardSet.FP2, CardSet.TGT, CardSet.LOE, CardSet.OG, CardSet.KARA, CardSet.GANGS};
 			//{ CardSet.GVG};
 			//CardSet[] cardSets = new[] { CardSet.NAXX, CardSet.KARA, CardSet.BRM, CardSet.LOE, CardSet.ICECROWN  };
-			CardSet[] cardSets = new[] { CardSet.NAXX };
-			//var cardSets = Enum.GetValues(typeof(CardSet));
+			//CardSet[] cardSets = new[] { CardSet.CORE, CardSet.EXPERT1, CardSet.UNGORO, CardSet.LOOTAPALOOZA, CardSet.ICECROWN, CardSet.GILNEAS, CardSet.BOOMSDAY, CardSet.TROLL, CardSet.HOF };
+			//CardSet[] cardSets = new[] { CardSet.ULDUM };
+			var cardSets = Enum.GetValues(typeof(CardSet));
 			foreach (CardSet cardSet in cardSets)
 			{
 				string className = UpperCaseFirst(cardSet.ToString()) + "CardsGen" + (adventure?"Adv":"");
 				string path = Path + @"\CardSets\";
-				//string classNameTest = UpperCaseFirst(cardSet.ToString()) + "CardsGen"+ (adventure?"Adv":"") +"Test";
-				//string pathTest = Path + @"\CardSetsTest\";
+				string classNameTest = UpperCaseFirst(cardSet.ToString()) + "CardsGen"+ (adventure?"Adv":"") +"Test";
+				string pathTest = Path + @"\CardSetsTest\";
 
 				WriteCardSetFile(cardSet, className, path, values);
-				//WriteCardSetTestFile(cardSet, classNameTest, pathTest, values);
+				WriteCardSetTestFile(cardSet, classNameTest, pathTest, values);
 			}
 			Console.ReadKey();
 		}
@@ -79,6 +103,8 @@ namespace SabberStoneBuildCardSet
 
 			var str = new StringBuilder();
 			str.AppendLine("using System.Collections.Generic;");
+			str.AppendLine("using SabberStoneCore.Actions;");
+			str.AppendLine("using SabberStoneCore.Auras;");
 			str.AppendLine("using SabberStoneCore.Enchants;");
 			str.AppendLine("using SabberStoneCore.Conditions;");
 			str.AppendLine("using SabberStoneCore.Enums;");
@@ -87,6 +113,8 @@ namespace SabberStoneBuildCardSet
 			str.AppendLine("using SabberStoneCore.Model.Entities;");
 			str.AppendLine("using SabberStoneCore.Tasks;");
 			str.AppendLine("using SabberStoneCore.Tasks.SimpleTasks;");
+			str.AppendLine("using SabberStoneCore.Triggers;");
+			str.AppendLine("// ReSharper disable RedundantEmptyObjectOrCollectionInitializer");
 			str.AppendLine();
 			str.AppendLine("namespace SabberStoneCore.CardSets.Undefined");
 			str.AppendLine("{");
@@ -148,7 +176,7 @@ namespace SabberStoneBuildCardSet
 				str.AppendLine();
 			}
 
-			str.AppendLine("\t\tpublic static void AddAll(Dictionary<string, Power> cards)");
+			str.AppendLine("\t\tpublic static void AddAll(Dictionary<string, CardDef> cards)");
 			str.AppendLine("\t\t{");
 			methods.ForEach(p => str.AppendLine($"\t\t\t{p}(cards);"));
 			str.AppendLine("\t\t}");
@@ -167,25 +195,21 @@ namespace SabberStoneBuildCardSet
 			IEnumerable<Card> values, bool? collect, CardSet set, CardType type,
 			CardClass cardClass)
 		{
-			string idString = MapCardSetAdventureString(set);
+			string[] idString = MapCardSetAdventureString(set);
 			IOrderedEnumerable<Card> valuesOrdered = values
 				.Where(p => p.Set == set
 							&& (collect == null || p.Collectible == collect)
 							&& (type == CardType.INVALID && p.Type != CardType.HERO && p.Type != CardType.HERO_POWER || p.Type == type)
 							&& (cardClass == CardClass.INVALID || p.Class == cardClass)
-							&& (idString == String.Empty || Adventure && p.Id.StartsWith(idString) || !Adventure && !p.Id.StartsWith(idString)))
+							&& (idString[0] == String.Empty || Adventure && idString.Any(t => p.Id.StartsWith(t)) || !Adventure && !idString.Any(t => p.Id.StartsWith(t))))
 							.OrderBy(p => p.Type.ToString());
-
-
-
-
 
 			if (!valuesOrdered.Any())
 			{
 				return null;
 			}
 			var str = new StringBuilder();
-			str.AppendLine($"\t\tprivate static void {name}(IDictionary<string, Power> cards)");
+			str.AppendLine($"\t\tprivate static void {name}(IDictionary<string, CardDef> cards)");
 			str.AppendLine("\t\t{");
 			foreach (Card card in valuesOrdered)
 			{
@@ -208,8 +232,8 @@ namespace SabberStoneBuildCardSet
 			}
 
 			string cardRace = "";
-			if (card.Race != Race.INVALID)
-				cardRace = $"Race: {card.Race.ToString().ToLower()}, ";
+			if (card.GetRawRace() != Race.INVALID)
+				cardRace = $"Race: {card.GetRawRace().ToString().ToLower()}, ";
 			string cardFac = "";
 			if (card.Faction != Faction.INVALID)
 				cardFac = $"Fac: {card.Faction.ToString().ToLower()}, ";
@@ -271,7 +295,7 @@ namespace SabberStoneBuildCardSet
 				string t = null;
 				if (Tag.TypedTags.ContainsKey(key))
 				{
-					t = Enum.GetName(Tag.TypedTags[key], (int)card.Tags[key]);
+					t = Enum.GetName(Tag.TypedTags[key], card.Tags[key]);
 				}
 
 				str.AppendLine($"{tab}\t// - {key} = {(t ?? card.Tags[key].ToString())}");
@@ -299,7 +323,7 @@ namespace SabberStoneBuildCardSet
 				string t = null;
 				if (Tag.TypedTags.ContainsKey(key))
 				{
-					t = Enum.GetName(Tag.TypedTags[key], (int)card.Tags[key]);
+					t = Enum.GetName(Tag.TypedTags[key], card.Tags[key]);
 				}
 				str.AppendLine($"{tab}\t// - {key} = {t ?? card.RefTags[key].ToString()}");
 			}
@@ -319,16 +343,25 @@ namespace SabberStoneBuildCardSet
 			string enchantId = Cards.All
 				.Where(p => p.Id.Contains(card.Id) && p.Id.Length > card.Id.Length && p.Type == CardType.ENCHANTMENT)
 				.Select(p => p.Id).FirstOrDefault();
-
-			str.AppendLine($"\t\t\tcards.Add(\"{card.Id}\", new Power {{");
-
+			string playReqs = String.Join(',', card.PlayRequirements.Select(p => $"{{PlayReq.{p.Key},{p.Value}}}"));
+			string entourages = String.Join(',', card.Entourage.Select(p => $"\"{p}\""));
+			str.AppendLine($"\t\t\tcards.Add(\"{card.Id}\", new CardDef(" +
+				$"{(entourages.Length == 0 ? "" : $"new[] {{{entourages}}}, ")}" +
+				$"{(playReqs.Length == 0? "" : $"new Dictionary<PlayReq, int>() {{{playReqs}}}, ")}" +
+				$"new Power");
+			str.AppendLine($"\t\t\t{{");
 			str.AppendLine($"\t\t\t\t// TODO [{card.Id}] {card.Name} && Test: {card.Name}_{card.Id}");
 			if (enchantId != null)
 				str.AppendLine($"\t\t\t\tInfoCardId = \"{enchantId}\",");
-			str.AppendLine($"\t\t\t\t//PowerTask = null,");
-			str.AppendLine($"\t\t\t\t//Trigger = null,");
+			if (card.Type == CardType.ENCHANTMENT)
+				str.AppendLine($"\t\t\t\t//Enchant = Enchants.Enchants.GetAutoEnchantFromText(\"{card.Id}\")");
+			else
+			{
+				str.AppendLine($"\t\t\t\t//PowerTask = null,");
+				str.AppendLine($"\t\t\t\t//Trigger = null,");
+			}
 
-			str.AppendLine($"\t\t\t}});\n");
+			str.AppendLine($"\t\t\t}}));\n");
 			return str.ToString();
 		}
 
@@ -338,12 +371,14 @@ namespace SabberStoneBuildCardSet
 
 			var str = new StringBuilder();
 			str.AppendLine("using Xunit;");
+			str.AppendLine("using SabberStoneCore.Actions;");
+			str.AppendLine("using SabberStoneCore.Auras;");
 			str.AppendLine("using SabberStoneCore.Enums;");
 			str.AppendLine("using SabberStoneCore.Config;");
 			str.AppendLine("using SabberStoneCore.Model;");
-			str.AppendLine("using SabberStoneCore.Model.Zones;");
 			str.AppendLine("using SabberStoneCore.Model.Entities;");
 			str.AppendLine("using System.Collections.Generic;");
+			str.AppendLine("using System.Linq;");
 			str.AppendLine();
 			str.AppendLine("namespace SabberStoneCoreTest.CardSets.Undefined");
 			str.AppendLine("{");
@@ -398,12 +433,12 @@ namespace SabberStoneBuildCardSet
 			IEnumerable<Card> values, bool? collect, CardSet set, CardType type,
 			CardClass cardClass)
 		{
-			string idString = MapCardSetAdventureString(set);
+			string[] idString = MapCardSetAdventureString(set);
 			IOrderedEnumerable<Card> valuesOrdered = values.Where(p => p.Set == set
 							&& (collect == null || p.Collectible == collect)
 							&& (type == CardType.INVALID && p.Type != CardType.HERO && p.Type != CardType.HERO_POWER || p.Type == type)
 							&& (cardClass == CardClass.INVALID || p.Class == cardClass)
-							&& (idString == String.Empty || Adventure && p.Id.StartsWith(idString) || !Adventure && !p.Id.StartsWith(idString)))
+							&& (idString[0] == String.Empty || Adventure && idString.Any(t => p.Id.StartsWith(t)) || !Adventure && !idString.Any(t => p.Id.StartsWith(t))))
 							.OrderBy(p => p.Type.ToString());
 			if (!valuesOrdered.Any())
 			{
@@ -417,6 +452,7 @@ namespace SabberStoneBuildCardSet
 			{
 				var cardNameRx = Rgx.Replace(card.Name, "").Split(' ', '-').ToList();
 				string cardName = String.Join("", cardNameRx.Select(p => UpperCaseFirst(p)).ToList());
+				string typeName = UpperCaseFirst(card.Type.ToString().ToLower());
 				CardClass heroClass1 = card.Class == CardClass.INVALID || card.Class == CardClass.NEUTRAL
 					? CardClass.MAGE
 					: card.Class;
@@ -444,8 +480,8 @@ namespace SabberStoneBuildCardSet
 				str.AppendLine("\t\t\tgame.StartGame();");
 				str.AppendLine("\t\t\tgame.Player1.BaseMana = 10;");
 				str.AppendLine("\t\t\tgame.Player2.BaseMana = 10;");
-				str.AppendLine($"\t\t\t//var testCard = Generic.DrawCard(game.CurrentPlayer, Cards.FromName(\"{card.Name}\"));");
-				str.AppendLine($"\t\t\t//game.Process(PlayCardTask.Any(game.CurrentPlayer, \"{card.Name}\"));");
+				str.AppendLine($"\t\t\t//IPlayable testCard = Generic.DrawCard(game.CurrentPlayer, Cards.FromName(\"{card.Name}\"));");
+				str.AppendLine($"\t\t\t//{typeName} testCard = game.ProcessCard<{typeName}>(\"{card.Name}\");");
 				str.AppendLine("\t\t}");
 				str.AppendLine();
 			}

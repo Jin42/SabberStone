@@ -1,20 +1,37 @@
-﻿using System;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using System;
 using System.Collections.Generic;
 using SabberStoneCore.Actions;
-using SabberStoneCore.Enums;
 using SabberStoneCore.Model;
 using SabberStoneCore.Model.Entities;
 
 namespace SabberStoneCore.Tasks.SimpleTasks
 {
-	public enum PlayType { SPELL };
+	public enum PlayType
+	{
+		SPELL
+	}
 
 	/// <summary>
-	/// Allows to have a playable played out in a task
+	///     Allows to have a playable played out in a task
 	/// </summary>
 	public class PlayTask : SimpleTask
 	{
+		private readonly PlayType _playType;
 		private readonly bool _randTarget;
+		private readonly EntityType _targetType;
 
 		/// <summary>
 		/// Create a PlayTask to play a card as a task.
@@ -23,53 +40,71 @@ namespace SabberStoneCore.Tasks.SimpleTasks
 		/// <param name="randTarget">true if the target of the playable is chosen randomly</param>
 		public PlayTask(PlayType playType, bool randTarget = false)
 		{
-			PlayType = playType;
+			_playType = playType;
 			_randTarget = randTarget;
 		}
 
-		public PlayType PlayType { get; set; }
-
-		public override TaskState Process()
+		public PlayTask(PlayType playType, EntityType targetType)
 		{
-			switch (PlayType)
+			_playType = playType;
+			_targetType = targetType;
+		}
+
+		public override TaskState Process(in Game game, in Controller controller, in IEntity source,
+			in IPlayable target,
+			in TaskStack stack = null)
+		{
+			switch (_playType)
 			{
 				case PlayType.SPELL:
-					Playables.ForEach(p =>
+					foreach (IPlayable p in stack?.Playables)
 					{
-						ICharacter randTarget = null;
-						if (_randTarget && p.Card.RequiresTarget)
+						if (!(p is Spell spell)) throw new Exception();
+						Controller c = spell.Controller;
+
+						ICharacter cardTarget = null;
+						if (_randTarget)
 						{
-							List<ICharacter> targets = (List<ICharacter>)p.ValidPlayTargets;
+							game.OnRandomHappened(true);
+							if (spell.Card.MustHaveTargetToPlay)
+							{
+								cardTarget = spell.GetRandomValidTarget();
+								if (cardTarget == null)
+								{
+									//throw new Exception($"{source} cannot play {p}; there is no valid target.");
+									if (spell.Zone != null)
+										Generic.RemoveFromZone(c, p);
 
-							randTarget = targets.Count > 0 ? Util.RandomElement(targets) : throw new InvalidOperationException();
-
-							p.CardTarget = randTarget?.Id ?? -1;
-
-							Game.Log(LogLevel.INFO, BlockType.POWER, "PlayTask",
-								!Game.Logging ? "" : $"{p}'s target is randomly selected to {randTarget}");
+									return TaskState.STOP;
+								}
+							}
 						}
-						if (p is Spell spell && (p.Zone == null || Generic.RemoveFromZone(Controller, p)))
+						else if
+							(_targetType != EntityType.INVALID)
 						{
-							Generic.CastSpell.Invoke(Controller, spell, randTarget, 0);
+							IList<IPlayable> targets = IncludeTask.GetEntities(_targetType, in controller, source, target,
+								stack?.Playables);
+
+							if (targets.Count == 0)
+								return TaskState.STOP;
+
+							cardTarget = (ICharacter)targets[0];
 						}
 
-						while (Controller.Choice != null)
+						if (spell.Zone == null || Generic.RemoveFromZone(c, p))
 						{
-							Generic.ChoicePick(Controller, Util.Choose(Controller.Choice.Choices));
+							Generic.CastSpell.Invoke(c, game, spell, cardTarget, 0);
 						}
-					});
+
+						while (c.Choice != null)
+							Generic.ChoicePick(c, game, c.Choice.Choices.Choose(game.Random));
+					}
+
 					return TaskState.COMPLETE;
 
 				default:
 					throw new NotImplementedException();
 			}
-		}
-
-		public override ISimpleTask Clone()
-		{
-			var clone = new PlayTask(PlayType, _randTarget);
-			clone.Copy(this);
-			return clone;
 		}
 	}
 }

@@ -1,4 +1,17 @@
-﻿using SabberStoneCore.Actions;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using SabberStoneCore.Actions;
 using SabberStoneCore.Model;
 using SabberStoneCore.Model.Entities;
 
@@ -6,43 +19,56 @@ namespace SabberStoneCore.Tasks.SimpleTasks
 {
 	public class SummonOpTask : SimpleTask
 	{
-		public SummonOpTask(Card card = null)
+		private readonly Card _card;
+		private readonly int _amount;
+
+		/// <summary>
+		/// Creates a task that summons an entity of the given card or
+		/// in the stack for the opponent.
+		/// </summary>
+		/// <param name="card"></param>
+		public SummonOpTask(Card card = null, int amount = 1)
 		{
-			Card = card;
+			_card = card;
+			_amount = amount;
 		}
 
-		public SummonOpTask(string cardId)
+		public SummonOpTask(string cardId, int amount = 1)
 		{
-			Card = Cards.FromId(cardId);
+			_card = Cards.FromId(cardId);
+			_amount = amount;
 		}
 
-		public Card Card { get; set; }
-
-		public override TaskState Process()
+		public override TaskState Process(in Game game, in Controller controller, in IEntity source,
+			in IPlayable target,
+			in TaskStack stack = null)
 		{
-			if (Controller.Opponent.BoardZone.IsFull)
+			//if (controller.Opponent.BoardZone.IsFull)
+			//	return TaskState.STOP;
+
+			if (_card == null && stack?.Playables.Count < 1)
 				return TaskState.STOP;
 
-			if (Card == null && Playables.Count < 1)
-				return TaskState.STOP;
+			for (int i = 0; i < _amount; i++)
+			{
+				if (controller.Opponent.BoardZone.IsFull)
+					return TaskState.STOP;
 
-			Minion summonEntity = Card != null ?
-				Entity.FromCard(Controller.Opponent, Card) as Minion :
-				Playables[0] as Minion;
+				Minion summonEntity;
 
-			if (summonEntity == null)
-				return TaskState.STOP;
+				if (_card == null)
+				{
+					summonEntity = (Minion) stack.Playables[0];
+					if (summonEntity.Controller == controller)
+						throw new System.Exception("SummonOpTask attempts to summon a friendly minion.");
+				}
+				else
+					summonEntity = (Minion) Entity.FromCard(controller.Opponent, in _card);
 
-			bool success = Generic.SummonBlock.Invoke(Controller.Opponent, summonEntity, -1);
+				Generic.SummonBlock.Invoke(game, summonEntity, -1, source);
+			}
 
 			return TaskState.COMPLETE;
-		}
-
-		public override ISimpleTask Clone()
-		{
-			var clone = new SummonOpTask(Card);
-			clone.Copy(this);
-			return clone;
 		}
 	}
 }

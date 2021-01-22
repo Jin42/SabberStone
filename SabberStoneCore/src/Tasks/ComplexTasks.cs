@@ -1,16 +1,32 @@
-﻿using System.Collections.Generic;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using SabberStoneCore.Enums;
 using SabberStoneCore.Conditions;
 using SabberStoneCore.Model;
 using SabberStoneCore.Tasks.SimpleTasks;
 using SabberStoneCore.Model.Entities;
+using SabberStoneCore.Model.Zones;
 
 namespace SabberStoneCore.Tasks
 {
-	internal partial class ComplexTask
+	internal static class ComplexTask
 	{
-		public static ISimpleTask Create(ISimpleTask task, int times)
+		public static ISimpleTask Repeat(ISimpleTask task, int times)
 		{
 			ISimpleTask[] list = new ISimpleTask[times];
 			for (int i = 0; i < times; i++)
@@ -40,12 +56,13 @@ namespace SabberStoneCore.Tasks
 				new IncludeTask(entityType),
 				new FuncPlayablesTask(playables =>
 				{
-					playables.ForEach(p =>
+					foreach (IPlayable p in playables)
 					{
-						var m = p as Minion;
+						var m = (Minion) p;
 						if (m.NumAttacksThisTurn == 1 && m.IsExhausted)
 							m.IsExhausted = false;
-					});
+					}
+
 					return playables;
 				}));
 
@@ -64,12 +81,12 @@ namespace SabberStoneCore.Tasks
 				new IncludeTask(entityType),
 				new FuncPlayablesTask(list =>
 				{
-					list.ForEach(p =>
+					foreach (IPlayable p in list)
 					{
-						Minion m = p as Minion;
+						var m = (Minion) p;
 						if (m.NumAttacksThisTurn == 0 && m.IsExhausted)
 							m.IsExhausted = false;
-					});
+					}
 					return null;
 				})
 			);
@@ -77,10 +94,21 @@ namespace SabberStoneCore.Tasks
 		public static ISimpleTask Stealth(EntityType entityType)
 			=> new SetGameTagTask(GameTag.STEALTH, 1, entityType);
 
+		public static ISimpleTask ExtraAttacksThisTurn(EntityType type) =>
+			Create(
+				new GetGameTagTask(GameTag.EXTRA_ATTACKS_THIS_TURN, type),
+				new MathAddTask(1),
+				new SetGameTagNumberTask(GameTag.EXTRA_ATTACKS_THIS_TURN, type));
+
 		public static ISimpleTask DiscardRandomCard(int amount)
 			=> Create(
 				new RandomTask(amount, EntityType.HAND),
 				new DiscardTask(EntityType.STACK));
+
+		public static ISimpleTask AddRandomShamanSpell
+			=> Create(
+				new RandomCardTask(CardType.SPELL, CardClass.SHAMAN),
+				new AddStackTo(EntityType.HAND));
 
 		public static ISimpleTask DrawCardTask()
 			=> Create(
@@ -98,14 +126,19 @@ namespace SabberStoneCore.Tasks
 
 		public static ISimpleTask DestroyRandomTargets(int targets, EntityType type)
 			=> Create(
-				new RandomTask(targets, type),
+				new IncludeTask(type),
+				new FilterStackTask(SelfCondition.IsNotDead),
+				new RandomTask(targets, EntityType.STACK),
 				new DestroyTask(EntityType.STACK));
 
 		public static ISimpleTask RandomCardCopyToHandFrom(EntityType entityType)
+			//=> Create(
+			//	new RandomTask(1, entityType),
+			//	new CopyTask(EntityType.STACK, 1),
+			//	new AddStackTo(EntityType.HAND));
 			=> Create(
 				new RandomTask(1, entityType),
-				new CopyTask(EntityType.STACK, 1),
-				new AddStackTo(EntityType.HAND));
+				new CopyTask(EntityType.STACK, Zone.HAND));
 
 		public static ISimpleTask IfComboElse(ISimpleTask combo)
 			=> Create(
@@ -195,10 +228,9 @@ namespace SabberStoneCore.Tasks
 		{
 			return Create(
 				new IncludeTask(EntityType.GRAVEYARD),
-				new FilterStackTask(SelfCondition.IsMinion, SelfCondition.IsTagValue(GameTag.TO_BE_DESTROYED, 1), selfCondition),
+				new FilterStackTask(SelfCondition.IsDead, selfCondition),
 				new RandomTask(amount, EntityType.STACK),
-				new CopyTask(EntityType.STACK, 1),
-				new SummonTask());
+				new CopyTask(EntityType.STACK, Zone.PLAY));
 		}
 
 		public static ISimpleTask SummonRandomMinion(GameTag tag, int value)
@@ -216,6 +248,62 @@ namespace SabberStoneCore.Tasks
 				new RandomTask(amount, EntityType.STACK),
 				new DrawStackTask());
 		}
+
+		public static ISimpleTask PutSecretFromDeck =>
+			Create(
+				new ConditionTask(EntityType.SOURCE, SelfCondition.IsZoneCount(Zone.SECRET, 5)),
+				new FlagTask(false, Create(
+					new IncludeTask(EntityType.DECK),
+					new FilterStackTask(SelfCondition.IsSecret),
+					new FuncPlayablesTask(stack =>
+					{
+						if (stack.Count == 0)
+							return null;
+
+						Controller c = stack[0].Controller;
+						do
+						{
+							IPlayable pick = ((List<IPlayable>)stack).Choose(c.Game.Random);
+							if (c.SecretZone.Any(p => p.Card.AssetId == pick.Card.AssetId))
+							{
+								stack.Remove(pick);
+								continue;
+							}
+
+							c.DeckZone.Remove(pick);
+							pick.Power.Trigger?.Activate(pick);
+							c.SecretZone.Add((Spell) pick);
+							if (c == c.Game.CurrentPlayer)
+								pick.IsExhausted = true;
+							break;
+
+						} while (stack.Count > 0);
+
+						return null;
+					}))));
+
+		public static ISimpleTask AddRandomOpClassCardToHand =>
+			Create(
+				new RandomCardTask(EntityType.OP_HERO),
+				new AddStackTo(EntityType.HAND));
+
+		public static ISimpleTask AddRandomMageSpellToHand =>
+			Create(
+				new RandomCardTask(CardType.SPELL, CardClass.MAGE),
+				new AddStackTo(EntityType.HAND));
+
+		public static ISimpleTask SummonRandomBasicTotem =>
+			Create(
+				new IncludeTask(EntityType.SOURCE),
+				new FuncPlayablesTask(list =>
+				{
+					list[0].Game.OnRandomHappened(true);
+					return new[]
+					{
+						Entity.FromCard(list[0].Controller, Cards.BasicTotems[list[0].Game.Random.Next(4)])
+					};
+				}),
+				new SummonTask());
 
 		// TODO maybee better implement it with CFM_712_t + int
 		private static readonly IReadOnlyList<string> JadeGolemStr = new []
@@ -309,6 +397,67 @@ namespace SabberStoneCore.Tasks
 					new ChangeEntityTask(cardId))));
 		}
 
+		public static ISimpleTask Scheme(ISimpleTask taskWithNumber)
+		{
+			return Create(
+				new GetGameTagTask(GameTag.TAG_SCRIPT_DATA_NUM_1, EntityType.SOURCE),
+				taskWithNumber);
+		}
+
+		public static readonly ISimpleTask DiscardLowestCostCard
+			= Create(
+				new IncludeTask(EntityType.HAND),
+				new FuncPlayablesTask(list =>
+				{
+					if (list.Count == 0)
+						return list;
+					list[0].Game.OnRandomHappened(true);
+					list.Shuffle(list[0].Game.Random);
+					int min = int.MaxValue;
+					int minArg = -1;
+					for (int i = 0; i < list.Count; i++)
+					{
+						int cost = list[i].Cost;
+						if (cost < min)
+						{
+							min = list[i].Cost;
+							minArg = i;
+						}
+					}
+
+					return new[] {list[minArg]};
+				}),
+				new DiscardTask(EntityType.STACK));
+
+		public static ISimpleTask SummonAllFriendlyDiedThisTurn(SelfCondition condition = null)
+		{
+			return new CustomTask((g, c, s, t, stack) =>
+			{
+				BoardZone board = c.BoardZone;
+				if (board.IsFull) return;
+
+				int num = c.NumFriendlyMinionsThatDiedThisTurn;
+				ReadOnlySpan<IPlayable> graveyard = c.GraveyardZone.GetSpan();
+				Span<int> buffer = stackalloc int[num]; int k = 0;
+
+				for (int i = graveyard.Length - 1, j = 0; j < num; --i)
+				{
+					if (!graveyard[i].ToBeDestroyed) continue;
+					if (graveyard[i].Card.Type != CardType.MINION) continue;
+					j++;
+					if ((!condition?.Eval(graveyard[i]) ?? false)) continue;
+					buffer[k++] = i;
+				}
+
+				for (--k; k >= 0; --k)
+				{
+					Entity.FromCard(in c, graveyard[buffer[k]].Card,
+						zone: board, creator: in s);
+					if (board.IsFull) return;
+				}
+			});
+		}
+
 		public static ISimpleTask RecursiveTask(ConditionTask repeatCondition, params ISimpleTask[] tasks)
 		{
 			ISimpleTask[] taskList = new ISimpleTask[tasks.Length + 2];
@@ -324,5 +473,39 @@ namespace SabberStoneCore.Tasks
 				));
 			return StateTaskList.Chain(taskList);
 		}
+
+		public static ISimpleTask Conditional(SelfCondition condition, ISimpleTask trueTask,
+			ISimpleTask falseTask = null)
+		{
+			var tasks = new List<ISimpleTask>
+			{
+				new ConditionTask(EntityType.SOURCE, condition),
+				new FlagTask(true, trueTask)
+			};
+
+			if (falseTask != null)
+				tasks.Add(new FlagTask(false, falseTask));
+
+			return Create(tasks.ToArray());
+		}
+
+		/// <summary>
+		/// Repeat the given task for each entity in the stack.
+		/// </summary>
+		/// <returns></returns>
+		//public static ISimpleTask ForEach(ISimpleTask task)
+		//{
+		//	return new FuncPlayablesTask(stack =>
+		//	{
+		//		if (stack.Count == 0) return stack;
+
+		//		TaskQueue queue = stack[0].Game.TaskQueue;
+
+		//		foreach (IPlayable p in stack)
+		//		{
+		//			queue.Enqueue(in task, )
+		//		}
+		//	})
+		//}
 	}
 }

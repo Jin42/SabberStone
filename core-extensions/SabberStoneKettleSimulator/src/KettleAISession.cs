@@ -1,14 +1,26 @@
-﻿using System;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using SabberStoneCore.Enums;
 using SabberStoneCore.Kettle;
 using SabberStoneCore.Model;
-using SabberStoneCore.Tasks;
 using SabberStoneCore.Tasks.PlayerTasks;
-using SabberStoneCoreAi.Nodes;
-using SabberStoneCoreAi.Score;
+using SabberStoneBasicAI.Nodes;
+using SabberStoneBasicAI.Score;
 using SabberStoneKettle;
 
 namespace SabberStoneKettleSimulator
@@ -177,9 +189,9 @@ namespace SabberStoneKettleSimulator
 				break;
 			}
 
-			if (option is PlayCardTask)
+			if (option is PlayCardTask playCard)
 			{
-				position = ((PlayerTask)option).ZonePosition;
+				position = playCard.ZonePosition;
 			}
 
 			KettleSendOption sendoption = new KettleSendOption();

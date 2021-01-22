@@ -1,160 +1,219 @@
-﻿using System.Collections.Generic;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using SabberStoneCore.Enums;
+using System.Runtime.CompilerServices;
 using SabberStoneCore.Actions;
+using SabberStoneCore.Enums;
 using SabberStoneCore.Model;
 using SabberStoneCore.Model.Entities;
-using System;
 
 namespace SabberStoneCore.Tasks.SimpleTasks
 {
-	public class PotionGenerating : SimpleTask
+	internal static class KazakusPower
 	{
-		private List<Card> _kazakusPotionSpells;
+		private static readonly Card[][] PotionCards;
 
-		private List<Card> KazakusPotionSpells => _kazakusPotionSpells ?? (_kazakusPotionSpells = GetKazakusPotionSpells());
-
-		public PotionGenerating(List<int> scriptTags = null)
+		static KazakusPower()
 		{
-			ScriptTags = scriptTags;
+			PotionCards = new Card[5][];
+
+			Card[] kazakusPotionSpells = 
+			{
+				Cards.FromId("CFM_621t2"),
+				Cards.FromId("CFM_621t3"),
+				Cards.FromId("CFM_621t4"),
+				Cards.FromId("CFM_621t5"),
+				Cards.FromId("CFM_621t6"),
+				Cards.FromId("CFM_621t8"),
+				Cards.FromId("CFM_621t9"),
+				Cards.FromId("CFM_621t10"),
+				//Cards.FromId("CFM_621t11"),
+				//Cards.FromId("CFM_621t12"),
+				//Cards.FromId("CFM_621t13"),
+				Cards.FromId("CFM_621t16"),
+				Cards.FromId("CFM_621t17"),
+				Cards.FromId("CFM_621t18"),
+				Cards.FromId("CFM_621t19"),
+				Cards.FromId("CFM_621t20"),
+				Cards.FromId("CFM_621t21"),
+				Cards.FromId("CFM_621t22"),
+				Cards.FromId("CFM_621t23"),
+				Cards.FromId("CFM_621t24"),
+				Cards.FromId("CFM_621t25"),
+				Cards.FromId("CFM_621t26"),
+				Cards.FromId("CFM_621t27"),
+				Cards.FromId("CFM_621t28"),
+				Cards.FromId("CFM_621t29"),
+				Cards.FromId("CFM_621t30"),
+				Cards.FromId("CFM_621t31"),
+				Cards.FromId("CFM_621t32"),
+				Cards.FromId("CFM_621t33"),
+				Cards.FromId("CFM_621t37"),
+				Cards.FromId("CFM_621t38"),
+				Cards.FromId("CFM_621t39")
+			};
+
+			// Cards for selecting cost.
+			// CFM_621t11, CFM_621t12, CFM_621513
+			PotionCards[0] = Cards.FromName("Kazakus").Entourage.Select(Cards.FromId).ToArray();
+			PotionCards[1] = kazakusPotionSpells.Where(c => c.Cost == 1).ToArray();
+			PotionCards[2] = kazakusPotionSpells.Where(c => c.Cost == 5).ToArray();
+			PotionCards[3] = kazakusPotionSpells.Where(c => c.Cost == 10).ToArray();
+			// Placeholder cards
+			PotionCards[4] = new[] { Cards.FromId("CFM_621t"), Cards.FromId("CFM_621t14"), Cards.FromId("CFM_621t15")};
 		}
 
-		public List<int> ScriptTags { get; set; }
-
-		public override TaskState Process()
+		internal static void CreateCostChoices(Controller c, IEntity source)
 		{
+			Generic.CreateChoiceCards(c, source, null, ChoiceType.GENERAL, ChoiceAction.KAZAKUS, PotionCards[0], null);
+		}
 
-			var minion = Source as Minion;
-			if (minion != null && ScriptTags == null)
+		internal static void Action(in Game g, in Controller c, in List<int> stack)
+		{
+			switch (stack.Count)
 			{
-				Generic.CreateChoiceCards.Invoke(Controller, Source, null, ChoiceType.GENERAL, ChoiceAction.KAZAKUS, minion.Card.Entourage.Select(Cards.FromId).ToArray(), null, null);
-				return TaskState.COMPLETE;
+				case 1:
+					CreateSecondChoices(in c, g.IdEntityDic[stack[0]].Card.Cost);
+					break;
+				case 2:
+					CreateThirdChoices(in c, g.IdEntityDic[stack[1]].Card);
+					break;
+				case 3:
+					GeneratePotion(in g, in c, in stack);
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
 
+		private static void CreateSecondChoices(in Controller c, int cost)
+		{
+			Card[] cards = GetCostCards(cost);
+
+			cards = cards.ChooseNElements(3, c.Game.Random);
+
+			CreateChoices(in c, in cards);
+		}
+
+		private static void CreateThirdChoices(in Controller c, in Card secondCard)
+		{
+			Card[] cards = GetCostCards(secondCard.Cost);
+
+			Card[] results = new Card[3];
+			#region Choose 3 random cards from not previously chosen ones
+			Util.DeepCloneableRandom rnd = c.Game.Random;
+			Span<int> indices = stackalloc int[3];
+			for (int i = 0; i < 3; i++)
+			{
+				int j;
+				bool flag;
+				do
+				{
+					j = rnd.Next(cards.Length);
+					flag = false;
+
+					if (cards[j] == secondCard)
+					{
+						flag = true;
+						continue;
+					}
+
+					for (int k = 0; k < i; k++)
+						if (indices[k] == j)
+						{
+							flag = true;
+							break;
+						}
+
+				} while (flag);
+
+				results[i] = cards[j];
+				indices[i] = j;
+			}
+			#endregion
+
+			CreateChoices(in c, in results);
+		}
+
+		private static void GeneratePotion(in Game g, in Controller c, in List<int> ids)
+		{
+			EntityList dict = g.IdEntityDic;
+			Card baseCard = dict[ids[0]].Card;
+			Card spell1 = dict[ids[1]].Card;
+			Card spell2 = dict[ids[2]].Card;
+
+			Card kazakusPotion;
+			if (spell1[GameTag.TAG_SCRIPT_DATA_NUM_1] > spell2[GameTag.TAG_SCRIPT_DATA_NUM_1])
+				kazakusPotion = Card.CreateKazakusPotion(in baseCard, in spell2, in spell1, g.History);
+			else
+				kazakusPotion = Card.CreateKazakusPotion(in baseCard, in spell1, in spell2, g.History);
+
+			Entity.FromCard(in c, in kazakusPotion,
+				zone: c.HandZone,
+				creator: dict[c.Choice.SourceId]);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static Card[] GetCostCards(int cost)
+		{
+			switch (cost)
+			{
+				case 1:
+					return PotionCards[1];
+				case 5:
+					return PotionCards[2];
+				case 10:
+					return PotionCards[3];
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
+
+		private static void CreateChoices(in Controller c, in Card[] cards)
+		{
+			int sourceId = c.Choice.SourceId;
+			List<int> choices = new List<int>(cards.Length);
+
+			// TODO: Pre-made potion entities for non-historic games
+			for (int i = 0; i < cards.Length; i++)
+			{
+				IPlayable choiceEntity = Entity.FromCard(in c, in cards[i],
+					new EntityData
+					{
+						{GameTag.CREATOR, sourceId},
+						{GameTag.DISPLAYED_CREATOR, sourceId}
+					}, c.SetasideZone);
+				choices.Add(choiceEntity.Id);
 			}
 
-			Game.Log(LogLevel.INFO, BlockType.PLAY, "PotionGenerating", !Game.Logging? "":$"Current scripttags = {String.Join(",", ScriptTags)}");
+			c.Choice.AppendNext(choices);
+		}
+	}
 
-			if (ScriptTags.Count < 3)
-			{
+	public class PotionGenerating : SimpleTask
+	{
+		#region Overrides of SimpleTask
 
-				int cost = KazakusPotionSpells.First(p =>
-					p[GameTag.TAG_SCRIPT_DATA_NUM_1] == ScriptTags[0]).Cost;
-				var cardIdList = KazakusPotionSpells.Where(p =>
-					p[GameTag.TAG_SCRIPT_DATA_NUM_1] < 1000 && p.Cost == cost &&
-					(ScriptTags.Count != 2 || p[GameTag.TAG_SCRIPT_DATA_NUM_1] != ScriptTags[1])).ToArray();
-
-				//var cardList = new List<Card>();
-				//while (cardList.Count < 3)
-				//{
-				//	Card card = Util.Choose<Card>(cardIdList);
-				//	cardList.Add(card);
-				//	cardIdList.RemoveAll(p => p == card);
-				//}
-
-				Card[] cardList = Util.ChooseNElements(cardIdList, 3);
-
-				Generic.CreateChoiceCards.Invoke(Controller, Source, null, ChoiceType.GENERAL, ChoiceAction.KAZAKUS, cardList, null, null);
-				return TaskState.COMPLETE;
-			}
-
-			// create card ...
-			Card baseCard = KazakusPotionSpells.First(p => p[GameTag.TAG_SCRIPT_DATA_NUM_1] == ScriptTags[0]).Clone();
-			var ordered = ScriptTags.Skip(1).OrderBy(p => p).ToList();
-			Card spell1 = KazakusPotionSpells.First(p => p.Cost == baseCard.Cost && p[GameTag.TAG_SCRIPT_DATA_NUM_1] == ordered[0]);
-			Card spell2 = KazakusPotionSpells.First(p => p.Cost == baseCard.Cost && p[GameTag.TAG_SCRIPT_DATA_NUM_1] == ordered[1]);
-			//baseCard.Text = "(1) " + spell1.Text + "(2) " + spell2.Text;
-			baseCard.Text = spell1.Text + "\n" + spell2.Text;
-			//baseCard.Powers = new List<Power>();
-			//baseCard.Powers.AddRange(spell1.Powers);
-			//spell1.PlayRequirements.ToList().ForEach(p =>
-			//{
-			//	if (!baseCard.PlayRequirements.ContainsKey(p.Key))
-			//		baseCard.PlayRequirements.Add(p.Key, p.Value);
-			//});
-			//baseCard.Powers.AddRange(spell2.Powers);
-			spell2.PlayRequirements.ToList().ForEach(p =>
-			{
-				if (!baseCard.PlayRequirements.ContainsKey(p.Key))
-					baseCard.PlayRequirements.Add(p.Key, p.Value);
-			});
-
-			var task = new AddCardTo(baseCard, EntityType.HAND)
-			{
-				Game = Controller.Game,
-				Controller = Controller,
-				Source = Source as IPlayable,
-				Target = Target as IPlayable
-			};
-			Controller.Game.TaskQueue.Enqueue(task);
-
-			// remove tag script from used kazakus entities
-			foreach (IPlayable playables in Controller.SetasideZone.Where(p => p.Card.Id.StartsWith("CFM_621")))
-			{
-				playables[GameTag.TAG_SCRIPT_DATA_NUM_1] = 0;
-			}
-
+		public override TaskState Process(in Game game, in Controller controller, in IEntity source, in IPlayable target,
+			in TaskStack stack = null)
+		{
+			KazakusPower.CreateCostChoices(controller, source);
 			return TaskState.COMPLETE;
 		}
 
-		private static List<Card> GetKazakusPotionSpells()
-		{
-			//var list = Cards.All.Where(p => p.Id.StartsWith("CFM_621t")
-			//&& !p.Id.Equals("CFM_621t")
-			////&& !p.Id.Equals("CFM_621t11")
-			////&& !p.Id.Equals("CFM_621t12")
-			////&& !p.Id.Equals("CFM_621t13")
-			//&& !p.Id.Equals("CFM_621t14")
-			//&& !p.Id.Equals("CFM_621t15")
-			//).Select(p => p.Clone()).ToList();
-			//return list;
-
-			return new List<Card>
-			{
-				Cards.FromId("CFM_621t2").Clone(),
-				Cards.FromId("CFM_621t3").Clone(),
-				Cards.FromId("CFM_621t4").Clone(),
-				Cards.FromId("CFM_621t5").Clone(),
-				Cards.FromId("CFM_621t6").Clone(),
-				Cards.FromId("CFM_621t8").Clone(),
-				Cards.FromId("CFM_621t9").Clone(),
-				Cards.FromId("CFM_621t10").Clone(),
-				Cards.FromId("CFM_621t11").Clone(),
-				Cards.FromId("CFM_621t12").Clone(),
-				Cards.FromId("CFM_621t13").Clone(),
-				Cards.FromId("CFM_621t16").Clone(),
-				Cards.FromId("CFM_621t17").Clone(),
-				Cards.FromId("CFM_621t18").Clone(),
-				Cards.FromId("CFM_621t19").Clone(),
-				Cards.FromId("CFM_621t20").Clone(),
-				Cards.FromId("CFM_621t21").Clone(),
-				Cards.FromId("CFM_621t22").Clone(),
-				Cards.FromId("CFM_621t23").Clone(),
-				Cards.FromId("CFM_621t24").Clone(),
-				Cards.FromId("CFM_621t25").Clone(),
-				Cards.FromId("CFM_621t26").Clone(),
-				Cards.FromId("CFM_621t27").Clone(),
-				Cards.FromId("CFM_621t28").Clone(),
-				Cards.FromId("CFM_621t29").Clone(),
-				Cards.FromId("CFM_621t30").Clone(),
-				Cards.FromId("CFM_621t31").Clone(),
-				Cards.FromId("CFM_621t32").Clone(),
-				Cards.FromId("CFM_621t33").Clone(),
-				Cards.FromId("CFM_621t37").Clone(),
-				Cards.FromId("CFM_621t38").Clone(),
-				Cards.FromId("CFM_621t39").Clone(),
-			};
-		}
-
-		private void ProcessSplit(List<Card>[] cardsToDiscover, ChoiceAction choiceAction)
-		{
-
-		}
-
-		public override ISimpleTask Clone()
-		{
-			var clone = new PotionGenerating(ScriptTags);
-			clone.Copy(this);
-			return clone;
-		}
+		#endregion
 	}
 }

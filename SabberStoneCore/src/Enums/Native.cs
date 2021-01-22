@@ -1,4 +1,17 @@
-﻿namespace SabberStoneCore.Enums
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+namespace SabberStoneCore.Enums
 {
 	/// <summary>
 	/// Enumeration used WITHIN HISTORY data, interpreted by the real HS client;
@@ -16,7 +29,9 @@
 		FATIGUE = 8,
 		RITUAL = 9,
 		REVEAL_CARD = 10,
-		ACTION = 99,
+		GAME_RESET = 11,
+		MOVE_MINION = 12,
+		ACTION = 99
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -46,7 +61,11 @@
 		BGT_FSG_BRAWL_VS_FRIEND = 40,
 		BGT_FSG_BRAWL_PVP = 41,
 		BGT_FSG_BRAWL_1P_VERSUS_AI = 42,
-		BGT_FSG_BRAWL_2P_COOP = 43
+		BGT_FSG_BRAWL_2P_COOP = 43,
+		//BGT_TOURNAMENT = 44
+		BGT_RANKED_STANDARD_NEW_PLAYER = 45,
+		//BGT_LAST = 46
+		BGT_BATTLEGROUNDS = 50
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -79,13 +98,19 @@
 		GOBLINS_VS_GNOMES = 9,
 		THE_GRAND_TOURNAMENT = 10,
 		OLD_GODS = 11,
-		FIRST_PURCHASE = 17,
+		FIRST_PURCHASE_OLD = 17,
 		SIGNUP_INCENTIVE = 18,
 		MEAN_STREETS = 19,
 		UNGORO = 20,
 		FROZEN_THRONE = 21,
 		GOLDEN_CLASSIC_PACK = 23,
-		KOBOLDS_AND_CATACOMBS = 30
+		KOBOLDS_AND_CATACOMBS = 30,
+		WITCHWOOD = 31,
+		THE_BOOMSDAY_PROJECT = 38,
+		RASTAKHANS_RUMBLE = 40,
+		MAMMOTH_BUNDLE = 41,
+		DALARAN = 49,
+		FIRST_PURCHASE = 181
 	}
 	/// <summary>
 	/// UNUSED
@@ -109,6 +134,10 @@
 	public enum CardClass
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 	{
+		// Custom enums for easy syntax.
+		ANOTHER_CLASS = -2,
+		OP_CLASS = -1,
+
 		INVALID = 0,
 		DEATHKNIGHT = 1,
 		DRUID = 2,
@@ -122,6 +151,7 @@
 		WARRIOR = 10,
 		DREAM = 11,
 		NEUTRAL = 12,
+		WHIZBANG = 13
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -160,13 +190,22 @@
 		GANGS_RESERVE = 26,
 		UNGORO = 27,
 		ICECROWN = 1001,
-		LOOTAPALOOZA = 1004
+		LOOTAPALOOZA = 1004,
+		GILNEAS = 1125,
+		BOOMSDAY = 1127,
+		TROLL = 1129,
+		DALARAN = 1130,
+		//TAVERNS_OF_TIME = 1143,
+		ULDUM = 1158,
+		DRAGONS = 1347,
+		WILD_EVENT = 1439,
+		BATTLEGROUNDS = 1453
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
 	/// Meta information about a card.
-	/// 
+	///
 	/// Cards CAN BE heroes or hero powers or minions or spells..
 	/// </summary>
 	public enum CardType
@@ -183,14 +222,17 @@
 		ITEM = 8,
 		TOKEN = 9,
 		HERO_POWER = 10,
+		BLANK = 11,
+		GAME_MODE_BUTTON = 12,
+		MOVE_MINION_HOVER_TARGET = 22
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
 	/// Indicates the context in which a player has choose between entities.
 	/// eg: Mulligan; The player picks cards to mulligan back into his deck.
-	/// 
-	/// 
+	///
+	///
 	/// The presented set of entities is distinct.
 	/// A 'performed' choice can consist of 0 or more picked entities.
 	/// </summary>
@@ -217,7 +259,8 @@
 		PRECON_DECK = 5,
 		TAVERN_BRAWL_DECK = 6,
 		FSG_BRAWL_DECK = 7,
-		HIDDEN_DECK = 1000,
+		//FRIENDLY_TOURNAMENT_DECK = 8,
+		HIDDEN_DECK = 1000
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -229,7 +272,10 @@
 	{
 		INVALID = 0,
 		LOOT = 1,
-		TREASURE = 2
+		TREASURE = 2,
+		SHRINE_TREASURE = 3,
+		HERO_POWER = 4,
+		DECK = 5
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 	/// <summary>
@@ -259,7 +305,7 @@
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
-	/// Indicates the format of decks, which limits 
+	/// Indicates the format of decks, which limits
 	/// the allowed cards that can be put into that deck.
 	/// Generally each type has a matching set of cards (wild set
 	/// for wild format) which contains all cards that are allowed
@@ -270,14 +316,14 @@
 	{
 		FT_UNKNOWN = 0,
 		FT_WILD = 1,
-		FT_STANDARD = 2,
+		FT_STANDARD = 2
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
 	/// These tags represent properties of entities. They must be seen as noncomplex and have
 	/// no relation with each other.
-	/// 
+	///
 	/// eg: <see cref="HEALTH"/>: holds the maximum health of this entity, including buffs.
 	/// eg: <see cref="DAMAGE"/>: holds the amount of damage inflicted onto this entity.
 	/// Both properties have no relation with each other and the available amount of health is calculated
@@ -338,7 +384,7 @@
 		ELITE = 114,
 		MAXRESOURCES = 176,
 		CARD_SET = 183,
-		CARDTEXT_INHAND = 184,
+		CARDTEXT = 184,
 		CARDNAME = 185,
 		CARD_ID = 186,
 		DURABILITY = 187,
@@ -432,6 +478,7 @@
 		TEMP_RESOURCES = 295,
 		OVERLOAD_OWED = 296,
 		NUM_ATTACKS_THIS_TURN = 297,
+		HEADCRACK_COMBO = 298, // more or less guessed gametags
 		NEXT_ALLY_BUFF = 302,
 		MAGNET = 303,
 		FIRST_CARD_PLAYED_THIS_TURN = 304,
@@ -450,11 +497,12 @@
 		//323 EnchantmentTag, true ... when weapon equipped
 		//324 EnchantmentTag
 		TARGETING_ARROW_TEXT = 325,
+		HEALING_DOES_DAMAGE = 326, // more or less guessed gametags
 		DATABASE_ID = 327,
 		ENCHANTMENT_BIRTH_VISUAL = 330,
 		ENCHANTMENT_IDLE_VISUAL = 331,
 		CANT_BE_TARGETED_BY_HERO_POWERS = 332,
-		//333 MinionTag, turns till effect? Or controller change after turn?
+		CONTROLLER_CHANGED_THIS_TURN = 333, // more or less guessed gametags: Potion of Madness, Shadow Madness, Embrace Darkness
 		WEAPON = 334,
 		InvisibleDeathrattle = 335,
 		HEALTH_MINIMUM = 337,
@@ -473,7 +521,7 @@
 		IGNORE_DAMAGE_OFF = 354,
 		GrantCharge = 355,
 		SPELLPOWER_DOUBLE = 356,
-		HEALING_DOUBLE = 357,
+		SPELL_HEALING_DOUBLE = 357,
 		NUM_OPTIONS_PLAYED_THIS_TURN = 358,
 		NUM_OPTIONS = 359,
 		TO_BE_DESTROYED = 360,
@@ -487,7 +535,7 @@
 		NUM_MINIONS_PLAYER_KILLED_THIS_TURN = 368,
 		NUM_MINIONS_KILLED_THIS_TURN = 369,
 		AFFECTED_BY_SPELL_POWER = 370,
-		EXTRA_DEATHRATTLES = 371,
+		EXTRA_MINION_DEATHRATTLES_BASE = 371,
 		START_WITH_1_HEALTH = 372,
 		IMMUNE_WHILE_ATTACKING = 373,
 		MULTIPLY_HERO_DAMAGE = 374,
@@ -520,7 +568,7 @@
 		HEROPOWER_ADDITIONAL_ACTIVATIONS = 405,
 		HEROPOWER_ACTIVATIONS_THIS_TURN = 406,
 		REVEALED = 410,
-		//411 IMPLEMENTED
+		EXTRA_BATTLECRIES_BASE = 411, // more or less guessed gametags: ControllerTag, true/false Bronzebard Extra Battlecry
 		NUM_FRIENDLY_MINIONS_THAT_DIED_THIS_GAME = 412,
 		CANNOT_ATTACK_HEROES = 413,
 		LOCK_AND_LOAD = 414,
@@ -536,7 +584,7 @@
 		PREHEALING = 425,
 		APPEAR_FUNCTIONALLY_DEAD = 426,
 		OVERLOAD_THIS_GAME = 427,
-		//430 IMPLEMENTED
+		NUM_SPELLS_PLAYED_THIS_TURN = 430, // more or less guessed gametags: need to implement it ^^
 		SPELLS_COST_HEALTH = 431,
 		HISTORY_PROXY_NO_BIG_CARD = 432,
 		PROXY_CTHUN = 434,
@@ -564,8 +612,8 @@
 		PENDING_EVOLUTIONS = 461,
 		QUEST = 462,
 		TAG_LAST_KNOWN_COST_IN_HAND = 466,
-		//467 IMPLEMENTED
-		//468 IMPLEMENTED
+		NUM_CARDS_TO_DRAW = 467, // more or less guessed gametags
+		MOAT_LURKER_MINION = 468, // more or less guessed gametags
 		DEFINING_ENCHANTMENT = 469,
 		FINISH_ATTACK_SPELL_ON_DAMAGE = 470,
 		MODULAR_ENTITY_PART_1 = 471,
@@ -576,7 +624,7 @@
 		MULTIPLE_CLASSES = 476,
 		ALL_TARGETS_RANDOM = 477,
 		// 478, true on quest cards ???
-		//479 IMPLEMENTED
+		TAG_LAST_KNOWN_ATK_IN_HAND = 479,// more or less guessed gametags: ???
 		MULTI_CLASS_GROUP = 480,
 		CARD_COSTS_HEALTH = 481,
 		GRIMY_GOONS = 482,
@@ -618,7 +666,7 @@
 		OVERRIDE_EMOTE_4 = 744,
 		OVERRIDE_EMOTE_5 = 745,
 		SCORE_FOOTERID = 751,
-		// 755 IMPLEMENTED
+		EXTRA_END_TURN_EFFECT = 755, // more or less guessed gametags: ???
 		RECRUIT = 763,
 		LOOT_CARD_1 = 764,
 		LOOT_CARD_2 = 765,
@@ -628,37 +676,196 @@
 		OVERRIDECARDNAME = 781,
 		OVERRIDECARDTEXTBUILDER = 782,
 		DUNGEON_PASSIVE_BUFF = 783,
+		GHOSTLY = 785,
+		DISGUISED_TWIN = 788,
+		SECRET_DEATHRATTLE = 789,
+		RUSH = 791,
+		REVEAL_CHOICES = 792,
+		HERO_DECK_ID = 793,
 		HIDDEN_CHOICE = 813,
+		AMOUNT_HERO_HEALED_THIS_TURN = 821, // more or less guessed gametags
 		ZOMBEAST = 823,
 		HERO_EMOTE_SILENCED = 832,
 		MINION_IN_HAND_BUFF = 845,
+		ECHO = 846,
+		MODULAR = 849,
+		KEEP_ENCHANTMENTS = 851, // more or less guessed gametags
 		IGNORE_HIDE_STATS_FOR_BIG_CARD = 857,
 		REAL_TIME_TRANSFORM = 859,
 		WAIT_FOR_PLAYER_RECONNECT_PERIOD = 860,
-
-
-		// more or less guessed gametags
-		HEADCRACK_COMBO = 298,
-		RESTORE_TO_DAMAGE = 326,
-		CONTROLLER_CHANGED_THIS_TURN = 333,	//	Potion of Madness, Shadow Madness, Embrace Darkness
-		EXTRA_BATTLECRY = 411, //ControllerTag, true/false Bronzebard Extra Battlecry
-		NUM_SPELLS_PLAYED_THIS_TURN = 430, // need to implement it ^^
-		NUM_CARDS_TO_DRAW = 467,
-		MOAT_LURKER_MINION = 468,
-		TAG_LAST_KNOWN_ATK_IN_HAND = 479, // ???
-		EXTRA_END_TURN_EFFECT = 755, // ???
-		AMOUNT_HERO_HEALED_THIS_TURN = 821,
-		KEEP_ENCHANTMENTS = 851,
-
-		NUM_SPELLS_PLAYED_THIS_GAME = 1001,
-		NUM_SECRETS_PLAYED_THIS_GAME = 1002,
-		NUM_WEAPONS_PLAYED_THIS_GAME = 1003,
-		LAST_CARD_DRAWN = 1004,
-		LAST_CARD_DISCARDED = 1005,
-		NUM_ELEMENTAL_PLAYED_THIS_TURN = 1006,
-		NUM_ELEMENTAL_PLAYED_LAST_TURN = 1007,
-		NUM_MURLOCS_PLAYED_THIS_GAME = 1008,
-		TAG_LAST_KNOWN_POSITION_ON_BOARD = 1009 // position aren't changed in graveyard and setaside zone ??? obolet?
+		ETHEREAL = 880,
+		EXTRA_DEATHRATTLES_BASE = 882,
+		PHASED_RESTART = 888,
+		DISCARD_CARDS = 890,
+		HEALTH_DISPLAY = 917,
+		ENABLE_HEALTH_DISPLAY = 920,
+		VOODOO_LINK = 921,
+		OVERKILL = 923,
+		PROPHECY = 924,
+		ATTACKABLE_BY_RUSH = 930,
+		SHIFTING_SPELL = 936,
+		USE_ALTERNATE_CARD_TEXT = 955,
+		SUPPRESS_DEATH_SOUND = 959,
+		ECHOING_OOZE_SPELL = 963,
+		COLLECTIONMANAGER_FILTER_MANA_EVEN = 956,
+		COLLECTIONMANAGER_FILTER_MANA_ODD = 957,
+		AMOUNT_HEALED_THIS_GAME = 958,
+		ZOMBEAST_DEBUG_CURRENT_BEAST_DATABASE_ID = 964,
+		ZOMBEAST_DEBUG_CURRENT_ITERATION = 965,
+		ZOMBEAST_DEBUG_MAX_ITERATIONS = 966,
+		START_OF_GAME = 968,
+		ENCHANTMENT_INVISIBLE = 976,
+		PUZZLE = 979,
+		PUZZLE_PROGRESS = 980,
+		PUZZLE_PROGRESS_TOTAL = 981,
+		PUZZLE_TYPE = 982,
+		PUZZLE_COMPLETED = 984,
+		CONCEDE_BUTTON_ALTERNATIVE_TEXT = 985,
+		HIDE_RESTART_BUTTON = 990,
+		WILD = 991,
+		HALL_OF_FAME = 992,
+		MARK_OF_EVIL = 994,
+		DECK_RULE_MOD_DECK_SIZE = 997,
+		FAST_BATTLECRY = 998,
+		END_TURN_BUTTON_ALTERNATIVE_APPEARANCE = 1000,
+		NUM_SPELLS_PLAYED_THIS_GAME = 1001, // more or less guessed gametags
+		WEATHER = 1002,
+		NUM_WEAPONS_PLAYED_THIS_GAME = 1003, // more or less guessed gametags
+		LAST_CARD_DRAWN = 1004, // more or less guessed gametags
+		LAST_CARD_DISCARDED = 1005, // more or less guessed gametags
+		NUM_ELEMENTAL_PLAYED_THIS_TURN = 1006, // more or less guessed gametags
+		NUM_ELEMENTAL_PLAYED_LAST_TURN = 1007, // more or less guessed gametags
+		NUM_MURLOCS_PLAYED_THIS_GAME = 1008, // more or less guessed gametags
+		TAG_LAST_KNOWN_POSITION_ON_BOARD = 1009, // more or less guessed gametags: position aren't changed in graveyard and setaside zone ??? obolet?
+		NUM_SECRETS_PLAYED_THIS_GAME = 1010, // more or less guessed gametags, moved from previous 1002
+		WEATHERSNOWSTORM = 1012,
+		WEATHERTHUNDERSTORM = 1013,
+		WEATHERFIRESTORM = 1014,
+		WAND = 1015,
+		TREAT_AS_PLAYED_HERO_CARD = 1016,
+		NUM_HERO_POWER_DAMAGE_THIS_GAME = 1025,
+		PUZZLE_NAME = 1026,
+		TURN_INDICATOR_ALTERNATIVE_APPEARANCE = 1027,
+		PREVIOUS_PUZZLE_COMPLETED = 1042,
+		GLORIOUSGLOOP = 1044,
+		HEALTH_DISPLAY_COLOR = 1046,
+		HEALTH_DISPLAY_NEGATIVE = 1047,
+		WHIZBANG_DECK_ID = 1048,
+		HIDE_OUT_OF_CARDS_WARNING = 1050,
+		GEARS = 1052,
+		LUNAHIGHLIGHTHINT = 1054,
+		SUPPRESS_JOBS_DONE_VO = 1055,
+		SHRINE = 1057,
+		ALL_HEALING_DOUBLE = 1058,
+		BLOCK_ALL_INPUT = 1071,
+		PUZZLE_MODE = 1073,
+		CARD_DOES_NOTHING = 1075,
+		CASTSWHENDRAWN = 1077,
+		DISPLAY_CARD_ON_MOUSEOVER = 1078,
+		DECK_POWER_UP = 1080,
+		SIDEKICK = 1081,
+		SIDEKICK_HERO_POWER = 1082,
+		REBORN = 1085,
+		SQUELCH_NON_GAME_TRIGGERS_AND_MODIFIERS = 1087,
+		QUEST_REWARD_DATABASE_ID = 1089,
+		DORMANT = 1090,
+		CUSTOMTEXT1 = 1093,
+		CUSTOMTEXT2 = 1094,
+		CUSTOMTEXT3 = 1095,
+		FLOOPY = 1097,
+		PLAYER_BASE_SHRINE_DECK_ID = 1099,
+		HIDE_WATERMARK = 1107,
+		EXTRA_MINION_BATTLECRIES_BASE = 1112,
+		RUN_PROGRESS = 1113,
+		NON_KEYWORD_ECHO = 1114,
+		PLAYER_TAG_THRESHOLD_TAG_ID = 1115,
+		PLAYER_TAG_THRESHOLD_VALUE = 1116,
+		HEALING_DOES_DAMAGE_HINT = 1117,
+		AFFECTED_BY_HEALING_DOES_DAMAGE = 1118,
+		DECK_LIST_SORT_ORDER = 1125,
+		EXTRA_BATTLECRIES_ADDITIONAL = 1126,
+		EXTRA_DEATHRATTLES_ADDITIONAL = 1131,
+		ALTERNATE_MOUSE_OVER_CARD = 1132,
+		ENCHANTMENT_BANNER_TEXT = 1135,
+		MOUSE_OVER_CARD_APPEARANCE = 1142,
+		IS_ADVENTURE_SCENARIO = 1172,
+		TWINSPELL_COPY = 1186,
+		PROXY_GALAKROND = 1190,
+		SIDEQUEST = 1192,
+		TWINSPELL = 1193,
+		GALAKROND_IN_PLAY = 1194,
+		COIN_MANA_GEM = 1199,
+		MEGA_WINDFURY = 1207,
+		EMPOWER = 1263,
+		EMPOWER_PRIEST = 1264,
+		EMPOWER_ROGUE = 1265,
+		EMPOWER_SHAMAN = 1266,
+		EMPOWER_WARLOCK = 1267,
+		EMPOWER_WARRIOR = 1268,
+		TWINSPELLPENDING = 1269,
+		DRUSTVAR_HORROR_DEBUG_CURRENT_SPELL_DATABASE_ID = 1280,
+		DRUSTVAR_HORROR_DEBUG_CURRENT_ITERATION = 1281,
+		HEROIC_HERO_POWER = 1282,
+		DRUSTVAR_HORROR_DEBUG_MAX_ITERATIONS = 1283,
+		CREATOR_DBID = 1284,
+		FATIGUEREFERENCE = 1290,
+		HERO_FLYING = 1293,
+		UI_BUFF_HEALTH_UP = 1294,
+		UI_BUFF_SET_COST_ZERO = 1295,
+		UI_BUFF_COST_DOWN = 1296,
+		UI_BUFF_ATK_UP = 1297,
+		UI_BUFF_COST_UP = 1298,
+		DEBUG_DISPLAY_TAG_BOTTOM_RIGHT = 1313,
+		DEBUG_DISPLAY_TAG_TOP_RIGHT = 1314,
+		SMART_DISCOVER_DEBUG_ENTITY_1 = 1318,
+		SMART_DISCOVER_DEBUG_ENTITY_2 = 1319,
+		SMART_DISCOVER_DEBUG_ENTITY_3 = 1320,
+		SMART_DISCOVER_DEBUG_TEST_COMPLETE = 1324,
+		SMART_DISCOVER_DEBUG_PASSIVE_EVAL_RESULT_1 = 1328,
+		SMART_DISCOVER_DEBUG_PASSIVE_EVAL_RESULT_2 = 1329,
+		SMART_DISCOVER_DEBUG_PASSIVE_EVAL_RESULT_3 = 1330,
+		COPIED_BY_KHADGAR = 1326,
+		ALTERNATE_CHAPTER_VO = 1334,
+		AI_MAKES_DECISIONS_FOR_PLAYER = 1335,
+		HAS_BEEN_REBORN = 1336,
+		USE_DISCOVER_VISUALS = 1342,
+		DOUBLE_FATIGUE_DAMAGE = 1346,
+		BOARD_VISUAL_STATE = 1347,
+		BACON_DUMMY_PLAYER = 1349,
+		SQUELCH_LIFETIME_EFFECTS = 1350,
+		ALLOW_MOVE_MINION = 1356,
+		TAG_TB_RANDOM_DECK_TIME_ID = 1358,
+		NEXT_OPPONENT_PLAYER_ID = 1360,
+		MAIN_GALAKROND = 1361,
+		GOOD_OL_GENERIC_FRIENDLY_DRAGON_DISCOVER_VISUALS = 1364,
+		GALAKROND_HERO_CARD = 1365,
+		INVOKE_COUNTER = 1366,
+		PLAYER_LEADERBOARD_PLACE = 1373,
+		PLAYER_TECH_LEVEL = 1377,
+		BACON_USE_FAST_ANIMATIONS = 1402,
+		DECK_RULE_COUNT_AS_COPY_OF_CARD_ID = 1413,
+		BACON_ODD_PLAYER_OUT = 1415,
+		BACON_IS_KEL_THUZAD = 1423,
+		BACON_HIGHLIGHT_ATTACKING_MINION_DURING_COMBAT = 1424,
+		RULEBOOK = 1430,
+		FX_DATANUM_1 = 1436,
+		BACON_ACTION_CARD = 1437,
+		GAME_MODE_BUTTON_SLOT = 1438,
+		TECH_LEVEL = 1440,
+		TECH_LEVEL_MANA_GEM = 1442,
+		UI_BUFF_DURABILITY_UP = 1443,
+		PLAYER_TRIPLES = 1447,
+		DISABLE_TURN_INDICATORS = 1448,
+		COLLECTION_RELATED_CARD_DATABASE_ID = 1452,
+		IS_BACON_POOL_MINION = 1456,
+		SUPPRESS_ALL_SUMMON_VO = 1458,
+		BACON_TRIPLE_CANDIDATE = 1460,
+		BATTLEGROUNDS_PREMIUM_EMOTES = 1463,
+		MOVE_MINION_HOVER_TARGET_SLOT = 1464,
+		BACON_COIN_ON_ENEMY_MINIONS = 1467,
+		ALWAYS_USE_FAST_ACTOR_TRIGGERS = 1473,
+		BACON_HERO_CAN_BE_DRAFTED = 1491,
+		ALLOW_GAME_SPEEDUP = 1526
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -679,7 +886,12 @@
 		GT_TAVERNBRAWL = 16,
 		GT_TB_1P_VS_AI = 17,
 		GT_TB_2P_COOP = 18,
-		GT_LAST = 19,
+		GT_FSG_BRAWL_VS_FRIEND = 19,
+		GT_FSG_BRAWL = 20,
+		GT_FSG_BRAWL_1P_VS_AI = 21,
+		GT_FSG_BRAWL_2P_COOP = 22,
+		GT_BATTLEGROUNDS = 23
+		// GT_LAST = 24
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -745,13 +957,19 @@
 		BEGIN_ARTIFICIAL_HISTORY_TILE = 10,
 		BEGIN_ARTIFICIAL_HISTORY_TRIGGER_TILE = 11,
 		END_ARTIFICIAL_HISTORY_TILE = 12,
-		START_DRAW = 13
+		START_DRAW = 13,
+		BURNED_CARD = 14,
+		EFFECT_SELECTION = 15,
+		BEGIN_LISTENING_FOR_TURN_EVENTS = 16,
+		HOLD_DRAWN_CARD = 17,
+		CONTROLLER_AND_ZONE_CHANGE = 18,
+		ARTIFICIAL_PAUSE = 19
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
 	/// State in which a player resides when the game is in Mulligan phase.
-	/// Think of Mulligan itself as a state machine within the game, which 
+	/// Think of Mulligan itself as a state machine within the game, which
 	/// is also a state machine.
 	/// </summary>
 	public enum Mulligan
@@ -766,9 +984,9 @@
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
-	/// A multiclassgroup is a set of cards which spans multiple 
+	/// A multiclassgroup is a set of cards which spans multiple
 	/// classes.
-	/// 
+	///
 	/// ex; GRIMMY_GOONS contains Paladin+Hunter+Warrior classes.
 	/// </summary>
 	public enum MultiClassGroup
@@ -777,14 +995,14 @@
 		INVALID = 0,
 		GRIMY_GOONS = 1,
 		JADE_LOTUS = 2,
-		KABAL = 3,
+		KABAL = 3
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
 	/// Indicates the type of choice a player can pick from a set of options.
 	/// eg: END_TURN; Indicates to the simulator that the player desires to end his turn.
-	/// 
+	///
 	/// The presented set of options is distinct.
 	/// A player MUST always pick EXACTLY ONE of the offered options.
 	/// </summary>
@@ -800,7 +1018,7 @@
 	/// <summary>
 	/// Requirements which have to be met before a card can be player.
 	/// The state of the board is checked to match these requirements.
-	/// 
+	///
 	/// A card can have multiple play requirements.
 	/// </summary>
 	public enum PlayReq
@@ -876,12 +1094,33 @@
 		REQ_NOT_DISABLED_HERO_POWER = 68,
 		REQ_MUST_PLAY_OTHER_CARD_FIRST = 69,
 		REQ_HAND_NOT_FULL = 70,
-		REQ_DRAG_TO_PLAY = 71
+		REQ_TARGET_IF_AVAILABLE_AND_NO_3_COST_CARD_IN_DECK = 71,
+		REQ_CAN_BE_TARGETED_BY_COMBOS = 72,
+		REQ_CANNOT_PLAY_THIS = 73,
+		REQ_FRIENDLY_MINIONS_OF_RACE_DIED_THIS_GAME = 74,
+		REQ_DRAG_TO_PLAY_PRE29933 = 75,
+		REQ_OPPONENT_PLAYED_CARDS_THIS_GAME = 77,
+		REQ_LITERALLY_UNPLAYABLE = 78,
+		REQ_TARGET_IF_AVAILABLE_AND_HERO_HAS_ATTACK = 79,
+		REQ_FRIENDLY_MINION_OF_RACE_DIED_THIS_TURN = 80,
+		REQ_TARGET_IF_AVAILABLE_AND_MINIMUM_SPELLS_PLAYED_THIS_TURN = 81,
+		REQ_FRIENDLY_MINION_OF_RACE_IN_HAND = 82,
+		REQ_DRAG_TO_PLAY_PRE31761 = 83,
+		REQ_MANA_CRYSTAL = 84,
+		REQ85 = 85,
+		REQ_FRIENDLY_DEATHRATTLE_MINION_DIED_THIS_GAME = 86,
+		REQ87 = 87,
+		REQ88 = 88,
+		REQ_FRIENDLY_REBORN_MINION_DIED_THIS_GAME = 89,
+		REQ_MINION_DIED_THIS_GAME = 90,
+		REQ_BOARD_NOT_COMPLETELY_FULL = 92,
+		REQ_TARGET_IF_AVAILABLE_AND_HAS_OVERLOADED_MANA = 93,
+		REQ_DRAG_TO_PLAY = 94
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
-	/// State information about controllers in a game. A controller represents 
+	/// State information about controllers in a game. A controller represents
 	/// one player.
 	/// </summary>
 	public enum PlayState
@@ -914,6 +1153,9 @@
 		CREATE_GAME = 7,
 		META_DATA = 8,
 		CHANGE_ENTITY = 9,
+		RESET_GAME = 10,
+		SUB_SPELL_START = 11,
+		SUB_SPELL_END = 12
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -950,7 +1192,9 @@
 		NERUBIAN = 22,
 		PIRATE = 23,
 		DRAGON = 24,
-		BLANK = 25
+		BLANK = 25,
+		ALL = 26,
+		EGG = 38
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -979,7 +1223,7 @@
 		INVALID = 0,
 		LOADING = 1,
 		RUNNING = 2,
-		COMPLETE = 3,
+		COMPLETE = 3
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -1006,7 +1250,7 @@
 		FINAL_WRAPUP = 14,
 		FINAL_GAMEOVER = 15,
 		MAIN_CLEANUP = 16,
-		MAIN_START_TRIGGERS = 17,
+		MAIN_START_TRIGGERS = 17
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -1025,7 +1269,7 @@
 		PLAYER = 5,
 		TEAM = 6,
 		ENTITY_DEFINITION = 7,
-		STRING = 8,
+		STRING = 8
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
@@ -1033,7 +1277,7 @@
 	/// Abstract area where entities reside during the game.
 	/// Each controller has it's own set of zones, these are not shared
 	/// with other players.
-	/// 
+	///
 	/// eg: <see cref="PLAY"/>: contains all entities that are on the board.
 	/// eg: <see cref="DECK"/>: contains all entities which are not yet drawn into <see cref="HAND"/>.
 	/// </summary>
@@ -1052,4 +1296,30 @@
 	}
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
+	/// <summary>
+	/// </summary>
+	public enum PuzzleType
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+	{
+		INVALID = 0,
+		MIRROR = 1,
+		LETHAL = 2,
+		SURVIVAL = 3,
+		CLEAR = 4
+	}
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
+	/// <summary>
+	/// </summary>
+	public enum ZodiacYear
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+	{
+		INVALID = -1,
+		PRE_STANDARD = 0,
+		KRAKEN = 1,
+		MAMMOTH = 2,
+		RAVEN = 3,
+		DRAGON = 4
+	}
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

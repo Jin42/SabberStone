@@ -1,4 +1,17 @@
-﻿using System;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using System;
 using System.Collections.Generic;
 using System.Text;
 using SabberStoneCore.Enums;
@@ -6,7 +19,7 @@ using SabberStoneCore.Model;
 using SabberStoneCore.Model.Entities;
 
 namespace SabberStoneCore.Kettle
-	#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 {
 	public class PowerHistoryBuilder
 	{
@@ -17,9 +30,9 @@ namespace SabberStoneCore.Kettle
 				Game = new PowerEntity
 				{
 					Id = game.Id,
-					Tags = new Dictionary<GameTag, int>(((Entity)game)._data.Tags)
+					Tags = new Dictionary<GameTag, int>(game._data)
 				},
-				Players = new PowerPlayer[]
+				Players = new[]
 						{
 					new PowerPlayer
 					{
@@ -29,7 +42,7 @@ namespace SabberStoneCore.Kettle
 						PowerEntity = new PowerEntity
 						{
 							Id = players[0].Id,
-							Tags = new Dictionary<GameTag, int>(((Entity)players[0])._data.Tags)
+							Tags = new Dictionary<GameTag, int>(players[0]._data)
 						}
 					},
 					new PowerPlayer
@@ -40,7 +53,7 @@ namespace SabberStoneCore.Kettle
 						PowerEntity = new PowerEntity
 						{
 							Id = players[1].Id,
-							Tags = new Dictionary<GameTag, int>(((Entity)players[1])._data.Tags)
+							Tags = new Dictionary<GameTag, int>(players[1]._data)
 						}
 					},
 						}
@@ -59,8 +72,14 @@ namespace SabberStoneCore.Kettle
 
 		public static PowerHistoryFullEntity FullEntity(IPlayable playable)
 		{
-			var tags = new Dictionary<GameTag, int>(((Entity)playable)._data.Tags);
+			var tags = new Dictionary<GameTag, int>(((Entity)playable)._data);
 			gameTagsEntities.ForEach(p => tags[p] = playable[p]);
+			if (playable is Character c)
+			{
+				tags[GameTag.ATK] = c.AttackDamage;
+				tags[GameTag.HEALTH] = c.Health;
+				tags[GameTag.DAMAGE] = c.Damage;
+			}
 
 			return new PowerHistoryFullEntity
 			{
@@ -109,7 +128,7 @@ namespace SabberStoneCore.Kettle
 
 		public static PowerHistoryShowEntity ShowEntity(IPlayable playable)
 		{
-			var tags = new Dictionary<GameTag, int>(((Entity)playable)._data.Tags);
+			var tags = new Dictionary<GameTag, int>(((Entity)playable)._data);
 			gameTagsEntities.ForEach(p => tags[p] = playable[p]);
 			//tags[GameTag.TAG_LAST_KNOWN_COST_IN_HAND] = playable[GameTag.COST];
 
@@ -149,7 +168,6 @@ namespace SabberStoneCore.Kettle
 		{
 			return new PowerHistoryBlockEnd();
 		}
-
 	}
 
 	//message PowerHistory
@@ -237,7 +255,7 @@ namespace SabberStoneCore.Kettle
 		public BlockType BlockType { get; set; }
 		public int Index { get; set; } = -1;
 		public int Source { get; set; }
-		public int Target { get; set; } = 0;
+		public int Target { get; set; }
 		public string EffectCardId { get; set; } = "";
 
 		public string Print()
@@ -324,9 +342,14 @@ namespace SabberStoneCore.Kettle
 		{
 			var str = new StringBuilder();
 			str.AppendLine(Model.Tag.TypedTags.ContainsKey(Tag)
-				? $"{PowerType} Entity = [{EntityId}] Tag={Tag} Value={Enum.GetName(Model.Tag.TypedTags[Tag], (int)Value)}"
+				? $"{PowerType} Entity = [{EntityId}] Tag={Tag} Value={Enum.GetName(Model.Tag.TypedTags[Tag], Value)}"
 				: $"{PowerType} Entity = [{EntityId}] Tag={Tag} Value={Value}");
 			return str.ToString();
+		}
+
+		public override string ToString()
+		{
+			return $"[{EntityId}][{Tag}][{Value}]";
 		}
 	}
 
@@ -351,6 +374,20 @@ namespace SabberStoneCore.Kettle
 		}
 	}
 
+	public class PowerHistoryChangeEntity : IPowerHistoryEntry
+	{
+		public PowerType PowerType => PowerType.CHANGE_ENTITY;
+		public string CardId { get; set; }
+		public PowerHistoryEntity Entity { get; set; }
+
+		public string Print()
+		{
+			var str = new StringBuilder();
+			str.AppendLine($"{PowerType} Type={CardId} - Change Entity = [{Entity.Print()}]");
+			return str.ToString();
+		}
+	}
+
 	//message PowerHistoryEntity
 	//{
 	//    required int32 entity = 1;
@@ -366,7 +403,7 @@ namespace SabberStoneCore.Kettle
 	{
 		public int Id { get; set; }
 		public string Name { get; set; }
-		public Dictionary<GameTag, int> Tags { get; set; } = new Dictionary<GameTag, int>();
+		public IDictionary<GameTag, int> Tags { get; set; } = new Dictionary<GameTag, int>();
 		public string Print()
 		{
 			var str = new StringBuilder();
@@ -374,7 +411,7 @@ namespace SabberStoneCore.Kettle
 			foreach (KeyValuePair<GameTag, int> pair in Tags)
 			{
 				str.AppendLine(Tag.TypedTags.ContainsKey(pair.Key)
-					? $"      [{pair.Key},{Enum.GetName(Tag.TypedTags[pair.Key], (int)pair.Value)}]"
+					? $"      [{pair.Key},{Enum.GetName(Tag.TypedTags[pair.Key], pair.Value)}]"
 					: $"      [{pair.Key},{pair.Value}]");
 			}
 			str.Append("]");

@@ -1,4 +1,17 @@
-﻿using System;
+﻿#region copyright
+// SabberStone, Hearthstone Simulator in C# .NET Core
+// Copyright (C) 2017-2019 SabberStone Team, darkfriend77 & rnilva
+//
+// SabberStone is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License.
+// SabberStone is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+#endregion
+using System;
 
 namespace SabberStoneKettleSimulator
 {
@@ -6,14 +19,18 @@ namespace SabberStoneKettleSimulator
 	{
 		static void Main(string[] args)
 		{
+			KettleServer server;
 			if (args.Length != 1)
 			{
-				Console.WriteLine("Invalid arguments, run as: SabberStoneKettleServer.exe PORT");
-				return;
+				server = new KettleServer(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 50051));
+				//Console.WriteLine("Invalid arguments, run as: SabberStoneKettleServer.exe PORT");
+				//return;
+				server.Enter();
+			} else
+			{
+				server = new KettleServer(new System.Net.IPEndPoint(System.Net.IPAddress.Any, int.Parse(args[0])));
+				server.Enter();
 			}
-
-			KettleServer server = new KettleServer(new System.Net.IPEndPoint(System.Net.IPAddress.Any, int.Parse(args[0])));
-			server.Enter();
 		}
 	}
 }
